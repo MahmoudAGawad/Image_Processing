@@ -38,7 +38,7 @@ public class ImageProcessing extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser chooser = new JFileChooser();
 				FileNameExtensionFilter filter = new FileNameExtensionFilter(
-						"JPEG PNG BMP", "jpg png bmp");
+						"JPEG PNG BMP files", "jpg", "png", "bmp");
 				chooser.setFileFilter(filter);
 				int returnVal = chooser.showOpenDialog(getParent());
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
