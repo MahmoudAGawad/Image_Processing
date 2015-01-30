@@ -29,13 +29,17 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class ImageProcessing extends JFrame {
+public class ImageProcessing extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static Dimension dimension = java.awt.Toolkit.getDefaultToolkit()
 			.getScreenSize();
+	
+	private static JFrame mainFrame;
 	private BufferedImage image;
 	private JPanel canvas;
 	private JMenuBar menuBar;
@@ -43,28 +47,34 @@ public class ImageProcessing extends JFrame {
 	private JMenuItem exit;
 	private JPanel toolBar, east, west;
 	private JScrollPane sp;
-	private JButton chooseImage;
+	private JButton chooseImage, crop, undo, reset;
 	private ImageIcon icon, close;
+	private JSlider zoom, rotate;
 
 	public ImageProcessing() {
-
-		this.setLocation(dimension.width / 10, dimension.height / 10);
-		this.setSize(dimension.width - 2 * this.getX(), dimension.height - 2
-				* this.getY());
-
-		Container pane = this.getContentPane();
+		
+		Container pane = mainFrame.getContentPane();
+		
+		
+		mainFrame.setLocation(dimension.width / 10, dimension.height / 10);
+		mainFrame.setSize(dimension.width - 2 * mainFrame.getX(), dimension.height - 2
+				* mainFrame.getY());
+		
 
 		pane.setLayout(new BorderLayout());
 
 		loadImage("example.jpg");
 		initGUI();
 
-		sp.setPreferredSize(new Dimension(this.getWidth(),
-				this.getHeight() - 50));
-		pane.add(sp, BorderLayout.CENTER);
+		sp.setPreferredSize(new Dimension(pane.getWidth(),
+				pane.getHeight() - 50));
+		this.add(sp, BorderLayout.CENTER);
 
 		toolBar.add(chooseImage);
 
+		west.add(rotate);
+		toolBar.add(zoom);
+		
 		pane.add(east, BorderLayout.EAST);
 		pane.add(west, BorderLayout.WEST);
 		pane.add(toolBar, BorderLayout.SOUTH);
@@ -80,8 +90,8 @@ public class ImageProcessing extends JFrame {
 				((new ImageIcon("open-file-icon.png").getImage()
 						.getScaledInstance(64, 64, java.awt.Image.SCALE_SMOOTH))));
 		close = new ImageIcon(
-				((new ImageIcon("close.png").getImage()
-						.getScaledInstance(64, 64, java.awt.Image.SCALE_SMOOTH))));
+				((new ImageIcon("close.png").getImage().getScaledInstance(64,
+						64, java.awt.Image.SCALE_SMOOTH))));
 		menuBar = new JMenuBar();
 
 		this.addComponentListener(new ComponentAdapter() {
@@ -120,18 +130,26 @@ public class ImageProcessing extends JFrame {
 		sp = new JScrollPane(canvas);
 
 		toolBar = new JPanel();
-		east = new JPanel();
-		west = new JPanel();
+		west = new JPanel(new GridLayout(1, 1));
+		east = new JPanel(new GridLayout(1, 1));
 
 		fileMenu = new JMenu("File");
 		exit = new JMenuItem(close);
 		exit.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				System.exit(0);
 			}
 		});
+
+		zoom = new JSlider(SwingConstants.HORIZONTAL, 0, 100, 50);
+		zoom.setPaintTicks(true);
+		zoom.setMajorTickSpacing(2);
+		
+		rotate = new JSlider(SwingConstants.VERTICAL, 0, 720, 360);
+		rotate.setPaintTicks(true);
+		rotate.setMajorTickSpacing(15);
 	}
 
 	private void loadImage(String path) {
@@ -146,11 +164,10 @@ public class ImageProcessing extends JFrame {
 
 	public static void main(String[] args) {
 
-		JFrame mainFrame = new ImageProcessing();
-
+		mainFrame = new JFrame("Image Viewer");
+		mainFrame.add(new ImageProcessing(), BorderLayout.CENTER);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setVisible(true);
-
 	}
 
 	private void reshape() {
