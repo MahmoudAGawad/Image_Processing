@@ -1,6 +1,8 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -9,22 +11,32 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
+import javax.swing.JToolBar;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class ImageProcessing extends JPanel {
 	private static final long serialVersionUID = 1L;
+
 	private BufferedImage image;
 	private JPanel canvas;
+	private JScrollPane viewer;
+	private JMenu file;
+	private JMenuItem openImage;
+	private JToolBar toolBar;
 
 	public ImageProcessing() {
+		
 		try {
 			this.image = ImageIO.read(new File("example.jpg"));
 		} catch (IOException ex) {
@@ -38,7 +50,7 @@ public class ImageProcessing extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser chooser = new JFileChooser();
 				FileNameExtensionFilter filter = new FileNameExtensionFilter(
-						"JPEG PNG BMP files", "jpg", "png", "bmp");
+						"JPEG PNG BMP", "jpg","png","bmp");
 				chooser.setFileFilter(filter);
 				int returnVal = chooser.showOpenDialog(getParent());
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -67,15 +79,19 @@ public class ImageProcessing extends JPanel {
 		JScrollPane sp = new JScrollPane(canvas);
 		setLayout(new BorderLayout());
 		add(sp, BorderLayout.CENTER);
+
 	}
 
 	public static void main(String[] args) {
 		JPanel p = new ImageProcessing();
 		JFrame f = new JFrame();
 		f.setContentPane(p);
-		f.setSize(800, 500);
+		f.setSize(800, 100);
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		f.setVisible(true);
+//		f.setLayout(new GridLayout(3, 1));
 
 	}
+
+	
 }
