@@ -107,7 +107,6 @@ public class ImageProcessing extends JPanel {
 	private void initButtons() {
 
 		zoomSlider = new JSlider(SwingConstants.HORIZONTAL, 0, 2000, zoomValue);
-		zoomSlider.setPaintTicks(true);
 		zoomSlider.setMajorTickSpacing(2);
 		zoomSlider.addChangeListener(new ChangeListener() {
 
@@ -236,13 +235,6 @@ public class ImageProcessing extends JPanel {
 
 		fileMenu = new JMenu("File");
 
-		zoomSlider = new JSlider(SwingConstants.HORIZONTAL, 0, 100, 50);
-		zoomSlider.setPaintTicks(true);
-		zoomSlider.setMajorTickSpacing(2);
-
-		rotateSlider = new JSlider(SwingConstants.VERTICAL, 0, 720, 360);
-		rotateSlider.setPaintTicks(true);
-		rotateSlider.setMajorTickSpacing(15);
 
 	}
 
