@@ -50,6 +50,7 @@ public class ImageProcessing extends JPanel {
 	private static Dimension rectSize;
 	private int zoomValue;
 	private BufferedImage selected;
+	private BufferedImage originalImage;
 
 	private static final long serialVersionUID = 1L;
 	private static Dimension dimension = java.awt.Toolkit.getDefaultToolkit()
@@ -160,8 +161,18 @@ public class ImageProcessing extends JPanel {
 				}
 			}
 		});
-		undoButton = new JButton("undo", undoIcon);
 		resetButton = new JButton("reset", resetIcon);
+		resetButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				image=originalImage;
+				initSelection();
+				zoomSlider.setValue(zoomValue);
+				repaint();
+			}
+		});
+		undoButton = new JButton("undo", undoIcon);
+
 	}
 
 	private void initGUI() {
@@ -241,6 +252,7 @@ public class ImageProcessing extends JPanel {
 	private void loadImage(String path) {
 		try {
 			this.image = ImageIO.read(new File(path));
+			this.originalImage=image;
 			if (canvas != null)
 				canvas.repaint();
 		} catch (IOException ex) {
