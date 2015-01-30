@@ -6,6 +6,9 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,6 +16,9 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +27,7 @@ import java.util.EventListener;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -35,6 +42,16 @@ import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class ImageProcessing extends JPanel {
+
+	private static Point startPoint ;
+	private static Point rectLocale;
+	private static Dimension rectSize ;
+	private int zoomValue;
+	private BufferedImage selected;
+
+
+
+
 	private static final long serialVersionUID = 1L;
 	private static Dimension dimension = java.awt.Toolkit.getDefaultToolkit()
 			.getScreenSize();
@@ -44,64 +61,55 @@ public class ImageProcessing extends JPanel {
 	private JPanel canvas;
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
-	private JMenuItem exit;
+	private JMenuItem exit, openFile;
 	private JPanel toolBar, east, west;
 	private JScrollPane sp;
-	private JButton chooseImage, crop, undo, reset;
-	private ImageIcon icon, close;
-	private JSlider zoom, rotate;
+	private JButton cropButton, undoButton, resetButton;
+	private ImageIcon openIcon, closeIcon, cropIcon, undoIcon, resetIcon;
+	private JSlider zoomSlider, rotateSlider;
 
 	public ImageProcessing() {
-		
-		Container pane = mainFrame.getContentPane();
-		
-		
+		initSelection();
 		mainFrame.setLocation(dimension.width / 10, dimension.height / 10);
 		mainFrame.setSize(dimension.width - 2 * mainFrame.getX(), dimension.height - 2
 				* mainFrame.getY());
+		mainFrame.setLayout(new BorderLayout());
 		
-
-		pane.setLayout(new BorderLayout());
-
 		loadImage("example.jpg");
 		initGUI();
-
-		sp.setPreferredSize(new Dimension(pane.getWidth(),
-				pane.getHeight() - 50));
-		this.add(sp, BorderLayout.CENTER);
-
-		toolBar.add(chooseImage);
-
-		west.add(rotate);
-		toolBar.add(zoom);
+		addComponent();
+	}
+	
+	
+	private void addComponent(){
 		
-		pane.add(east, BorderLayout.EAST);
-		pane.add(west, BorderLayout.WEST);
-		pane.add(toolBar, BorderLayout.SOUTH);
-
+		
+		sp.setPreferredSize(new Dimension(mainFrame.getWidth(),
+				mainFrame.getHeight() - 50));
+		this.add(sp, BorderLayout.CENTER);
+		
+		toolBar.add(resetButton);
+		toolBar.add(undoButton);
+		toolBar.add(cropButton);
+		
+		
+		west.add(rotateSlider);
+		toolBar.add(zoomSlider);
+		
+		mainFrame.add(east, BorderLayout.EAST);
+		mainFrame.add(west, BorderLayout.WEST);
+		mainFrame.add(toolBar, BorderLayout.SOUTH);
+		
 		menuBar.add(fileMenu);
 		fileMenu.setMnemonic(KeyEvent.VK_F);
+		fileMenu.add(openFile);
 		fileMenu.add(exit);
-		pane.add(menuBar, BorderLayout.NORTH);
+		mainFrame.add(menuBar, BorderLayout.NORTH);
 	}
-
-	private void initGUI() {
-		icon = new ImageIcon(
-				((new ImageIcon("open-file-icon.png").getImage()
-						.getScaledInstance(64, 64, java.awt.Image.SCALE_SMOOTH))));
-		close = new ImageIcon(
-				((new ImageIcon("close.png").getImage().getScaledInstance(64,
-						64, java.awt.Image.SCALE_SMOOTH))));
-		menuBar = new JMenuBar();
-
-		this.addComponentListener(new ComponentAdapter() {
-			public void componentResized(ComponentEvent e) {
-				reshape();
-			}
-		});
-
-		chooseImage = new JButton("open", icon);
-		chooseImage.addActionListener(new ActionListener() {
+	
+	private void initButtons(){
+		openFile = new JMenuItem("Open", openIcon);
+		openFile.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -112,9 +120,38 @@ public class ImageProcessing extends JPanel {
 				int returnVal = chooser.showOpenDialog(getParent());
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					loadImage(chooser.getSelectedFile().getAbsolutePath());
+					initSelection();
 				}
 			}
 		});
+		
+		exit = new JMenuItem("Exit",closeIcon);
+		exit.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				System.exit(0);
+			}
+		});
+		
+		cropButton = new JButton("crop", cropIcon);
+		undoButton = new JButton("undo", undoIcon);
+		resetButton = new JButton("reset", resetIcon);
+	}
+	
+	private void initGUI() {
+		
+		loadIcons();
+		initButtons();
+		
+
+		mainFrame.addComponentListener(new ComponentAdapter() {
+			public void componentResized(ComponentEvent e) {
+				reshape();
+			}
+		});
+
+		
 
 		this.canvas = new JPanel() {
 			private static final long serialVersionUID = 1L;
@@ -126,7 +163,48 @@ public class ImageProcessing extends JPanel {
 					g.drawImage(image, 0, 0, null);
 			}
 		};
+		
+		
+		MouseBehavior behavior = new MouseBehavior();
+		this.canvas = new JPanel() {
+			private static final long serialVersionUID = 1L;
 
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				Graphics2D g2d = ((Graphics2D) g);
+
+				if (selected != null) {
+					g2d.drawImage(image, 0, 0, null);
+					int width2 = (int) (rectSize.width + rectSize.width
+							* (zoomValue / 500d));
+					int height2 = (int) (rectSize.height + rectSize.height
+							* (zoomValue / 500d));
+					int x2 = rectLocale.x - ((width2 - rectSize.width) / 2);
+					int y2 = rectLocale.y - ((height2 - rectSize.height) / 2);
+					Image scaledInstance = selected.getScaledInstance(width2,
+							height2, Image.SCALE_AREA_AVERAGING);
+					g2d.drawImage(scaledInstance, x2, y2, null);
+					g2d.drawRect(x2, y2, width2, height2);
+				} else {
+					int width2 = (int) (image.getWidth() + image.getWidth()
+							* (zoomValue / 500d));
+					int height2 = (int) (image.getHeight() + image.getHeight()
+							* (zoomValue / 500d));
+
+					Image scaledInstance = image.getScaledInstance(width2,
+							height2, Image.SCALE_AREA_AVERAGING);
+					g2d.drawImage(scaledInstance, 0, 0, null);
+					g2d.draw(new Rectangle(rectLocale, rectSize));
+				}
+			}
+		};
+		canvas.addMouseMotionListener(behavior);
+		canvas.addMouseListener(behavior);
+		canvas.addMouseWheelListener(behavior);
+		
+		menuBar = new JMenuBar();
+		
 		sp = new JScrollPane(canvas);
 
 		toolBar = new JPanel();
@@ -134,22 +212,17 @@ public class ImageProcessing extends JPanel {
 		east = new JPanel(new GridLayout(1, 1));
 
 		fileMenu = new JMenu("File");
-		exit = new JMenuItem(close);
-		exit.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				System.exit(0);
-			}
-		});
-
-		zoom = new JSlider(SwingConstants.HORIZONTAL, 0, 100, 50);
-		zoom.setPaintTicks(true);
-		zoom.setMajorTickSpacing(2);
 		
-		rotate = new JSlider(SwingConstants.VERTICAL, 0, 720, 360);
-		rotate.setPaintTicks(true);
-		rotate.setMajorTickSpacing(15);
+
+		zoomSlider = new JSlider(SwingConstants.HORIZONTAL, 0, 100, 50);
+		zoomSlider.setPaintTicks(true);
+		zoomSlider.setMajorTickSpacing(2);
+		
+		rotateSlider = new JSlider(SwingConstants.VERTICAL, 0, 720, 360);
+		rotateSlider.setPaintTicks(true);
+		rotateSlider.setMajorTickSpacing(15);
+		
+		
 	}
 
 	private void loadImage(String path) {
@@ -172,14 +245,98 @@ public class ImageProcessing extends JPanel {
 
 	private void reshape() {
 		int min = Math.max(this.getHeight() / 10, 70);
-		sp.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()
-				- min));
-		toolBar.setPreferredSize(new Dimension(this.getWidth() / 2, min));
+		this.setPreferredSize(new Dimension(mainFrame.getWidth(), mainFrame.getHeight()-min));
+		
 
 		if (canvas != null && image != null)
 			canvas.setPreferredSize(new Dimension(image.getWidth(), image
 					.getHeight()));
-
+		sp.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
+		toolBar.setPreferredSize(new Dimension(this.getWidth() / 2, min));
 	}
+	
+	private ImageIcon loadIcon(String path){
+		return new ImageIcon(
+				((new ImageIcon(path).getImage()
+						.getScaledInstance(64, 55, java.awt.Image.SCALE_SMOOTH))));
+	}
+	
+	private void loadIcons(){
+		openIcon = loadIcon("open-file-icon.png");
+		closeIcon = loadIcon("close.png");
+		cropIcon = loadIcon("crop.png");
+		undoIcon = loadIcon("undo.png");
+		resetIcon = loadIcon("reset.png");
+	}
+	
+	private void initSelection() {
+		startPoint = new Point(0, 0);
+		rectLocale = new Point();
+		rectSize = new Dimension();
+		zoomValue = 0;
+		selected = null;
+	}
+	
+	private class MouseBehavior extends MouseAdapter {
 
+		@Override
+		public void mousePressed(MouseEvent e) {
+			zoomValue = 0;
+			startPoint = e.getPoint();
+			rectLocale = new Point();
+			rectSize = new Dimension();
+			selected = null;
+			// if (e.getSource() instanceof JComponent) {
+			// ((JComponent) e.getSource()).repaint();
+			// }
+		}
+
+		@Override
+		public void mouseDragged(MouseEvent e) {
+			Point currentPoint = e.getPoint();
+			rectSize.width = Math.abs(currentPoint.x - startPoint.x);
+			rectSize.height = Math.abs(currentPoint.y - startPoint.y);
+			if (e.isShiftDown()) {
+				rectSize.width = rectSize.height = Math.min(rectSize.width,
+						rectSize.height);
+				int dx = startPoint.x - rectSize.width;
+				int dy = startPoint.y - rectSize.height;
+				rectLocale.x = startPoint.x < currentPoint.x ? startPoint.x
+						: Math.max(dx, dy);
+				rectLocale.y = startPoint.y < currentPoint.y ? startPoint.y
+						: Math.min(dx, dy);
+			} else {
+				rectLocale.x = Math.min(currentPoint.x, startPoint.x);
+				rectLocale.y = Math.min(currentPoint.y, startPoint.y);
+			}
+			if (e.getSource() instanceof JComponent) {
+				((JComponent) e.getSource()).repaint();
+			}
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			if (rectSize.width <= 0 || rectSize.height <= 0) {
+				selected = null;
+			} else {
+				selected = image.getSubimage(Math.max(0, rectLocale.x),
+						Math.max(0, rectLocale.y), rectSize.width,
+						rectSize.height);
+			}
+			if (e.getSource() instanceof JComponent) {
+				((JComponent) e.getSource()).repaint();
+			}
+		}
+
+		@Override
+		public void mouseWheelMoved(MouseWheelEvent e) {
+			zoomValue = Math.min(2000,
+					Math.max(0, zoomValue + e.getUnitsToScroll() * 10));
+			if (e.getSource() instanceof JComponent) {
+				((JComponent) e.getSource()).repaint();
+			}
+		}
+	}
+	
+	
 }
