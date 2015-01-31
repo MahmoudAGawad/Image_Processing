@@ -9,6 +9,7 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,6 +20,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +54,8 @@ public class ImageProcessing extends JPanel {
 	private int zoomValue;
 	private BufferedImage selected;
 	private BufferedImage originalImage;
+	private BufferedImage unrotatedImage;
+	
 
 	private static final long serialVersionUID = 1L;
 	private static Dimension dimension = java.awt.Toolkit.getDefaultToolkit()
@@ -117,9 +122,19 @@ public class ImageProcessing extends JPanel {
 				repaint();
 			}
 		});
-		rotateSlider = new JSlider(SwingConstants.VERTICAL, 0, 720, 360);
+		rotateSlider = new JSlider(SwingConstants.VERTICAL, -360, 360, 0);
 		rotateSlider.setPaintTicks(true);
 		rotateSlider.setMajorTickSpacing(15);
+		rotateSlider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				image=rotate(unrotatedImage, rotateSlider.getValue());
+				repaint();
+				
+			}
+		});
+		
 
 		openFile = new JMenuItem("Open", openIcon);
 		openFile.addActionListener(new ActionListener() {
@@ -155,6 +170,7 @@ public class ImageProcessing extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				if (selected != null) {
 					image = selected;
+					unrotatedImage=image;
 					initSelection();
 					zoomSlider.setValue(zoomValue);
 					repaint();
@@ -166,6 +182,7 @@ public class ImageProcessing extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				image=originalImage;
+				unrotatedImage=image;
 				initSelection();
 				zoomSlider.setValue(zoomValue);
 				repaint();
@@ -253,6 +270,7 @@ public class ImageProcessing extends JPanel {
 		try {
 			this.image = ImageIO.read(new File(path));
 			this.originalImage=image;
+			this.unrotatedImage=image;
 			if (canvas != null)
 				canvas.repaint();
 		} catch (IOException ex) {
@@ -267,7 +285,24 @@ public class ImageProcessing extends JPanel {
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setVisible(true);
 	}
+	 private  BufferedImage rotate(BufferedImage pic,
+             double angle) {
+     int width = pic.getWidth();
+     int height = pic.getHeight();
+     double rotationRequired = Math.toRadians(angle);
+     double locationX = pic.getWidth() / 2;
+     double locationY = pic.getHeight() / 2;
+     AffineTransform tx = AffineTransform.getRotateInstance(
+                     rotationRequired, locationX, locationY);
+     AffineTransformOp op = new AffineTransformOp(tx,
+                     AffineTransformOp.TYPE_BILINEAR);
 
+     BufferedImage img2 = new BufferedImage(width, height, 8);
+
+     img2 = op.filter(pic, null);
+     // rotation
+     return img2;
+}
 	private void reshape() {
 		int min = Math.max(this.getHeight() / 10, 70);
 		this.setPreferredSize(new Dimension(mainFrame.getWidth(), mainFrame
