@@ -82,14 +82,14 @@ public class ImageProcessing extends JPanel {
 
 		loadImage("icon.jpg");
 		initGUI();
-
+		
 		addComponent();
 	}
 
 	private void addComponent() {
 
-		// sp.setPreferredSize(new Dimension(mainFrame.getWidth(),
-		// mainFrame.getHeight() - 50));
+//		 sp.setPreferredSize(new Dimension(mainFrame.getWidth(),
+//		 mainFrame.getHeight() ));
 		this.add(sp, BorderLayout.CENTER);
 
 		toolBar.add(resetButton);
@@ -129,8 +129,11 @@ public class ImageProcessing extends JPanel {
 			
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				image=rotate(unrotatedImage, rotateSlider.getValue());
-				repaint();
+				if (unrotatedImage!=null) {
+					image=rotate(unrotatedImage, rotateSlider.getValue());
+					repaint();
+				}
+				
 				
 			}
 		});
@@ -150,7 +153,9 @@ public class ImageProcessing extends JPanel {
 					loadImage(chooser.getSelectedFile().getAbsolutePath());
 					initSelection();
 					zoomSlider.setValue(zoomValue);
+					rotateSlider.setValue(0);
 					reshape();
+					
 				}
 			}
 		});
@@ -199,22 +204,14 @@ public class ImageProcessing extends JPanel {
 
 		mainFrame.addComponentListener(new ComponentAdapter() {
 			public void componentResized(ComponentEvent e) {
+				if(image!=null){
 				reshape();
 				repaint();
+				}
 			}
 		});
 
-		this.canvas = new JPanel() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected void paintComponent(Graphics g) {
-				super.paintComponent(g);
-				if (image != null)
-					g.drawImage(image, 0, 0, null);
-			}
-		};
-
+		
 		MouseBehavior behavior = new MouseBehavior();
 		this.canvas = new JPanel() {
 			private static final long serialVersionUID = 1L;
@@ -222,6 +219,8 @@ public class ImageProcessing extends JPanel {
 			@Override
 			protected void paintComponent(Graphics g) {
 				super.paintComponent(g);
+				if (image != null){
+					
 				Graphics2D g2d = ((Graphics2D) g);
 
 				if (selected != null) {
@@ -247,7 +246,7 @@ public class ImageProcessing extends JPanel {
 					g2d.drawImage(scaledInstance, 0, 0, null);
 					g2d.draw(new Rectangle(rectLocale, rectSize));
 				}
-			}
+			}}
 		};
 		canvas.addMouseMotionListener(behavior);
 		canvas.addMouseListener(behavior);
@@ -271,8 +270,13 @@ public class ImageProcessing extends JPanel {
 			this.image = ImageIO.read(new File(path));
 			this.originalImage=image;
 			this.unrotatedImage=image;
-			if (canvas != null)
+			
+			
+			if (canvas != null){
+				
 				canvas.repaint();
+			}
+				
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(this, "Image not found!");
 		}
@@ -311,6 +315,7 @@ public class ImageProcessing extends JPanel {
 		if (canvas != null && image != null)
 			canvas.setPreferredSize(new Dimension(image.getWidth(), image
 					.getHeight()));
+		if(image!=null)
 		sp.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
 		toolBar.setPreferredSize(new Dimension(this.getWidth(), min));
 	}
