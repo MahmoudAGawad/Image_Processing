@@ -130,7 +130,11 @@ public class ImageProcessing extends JPanel {
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				if (unrotatedImage!=null) {
+					
 					image=rotate(unrotatedImage, rotateSlider.getValue());
+					
+					initSelection();
+					zoomSlider.setValue(zoomValue);
 					repaint();
 				}
 				
